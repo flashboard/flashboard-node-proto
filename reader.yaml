@@ -1,0 +1,54 @@
+esphome:
+  name: reader
+  name_add_mac_suffix: true
+  project:
+    name: "flashboard.reader"
+    version: "0.0.1"
+
+esp8266:
+  board: d1_mini_lite
+
+logger:
+  level: DEBUG
+
+debug:
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_pass
+  fast_connect: true
+
+  ap:
+    ssid: !secret hotspot_ssid
+    password: !secret hotspot_pass
+
+captive_portal:
+
+sensor:
+  - platform: uptime
+    name: Uptime Sensor
+
+mqtt:
+  broker: !secret mqtt_broker
+  username: !secret mqtt_user
+  password: !secret mqtt_pass
+  discovery: true
+  discovery_retain: true
+  discovery_prefix: flashboard
+  discovery_unique_id_generator: mac
+  topic_prefix: flashboard
+  log_topic: flashboard/log
+
+spi:
+  clk_pin: D5
+  miso_pin: D6
+  mosi_pin: D7
+
+rc522_spi:
+  cs_pin: D8
+  update_interval: 0.5s
+  on_tag:
+    then:
+      - mqtt.publish:
+          topic: !lambda 'std::string mac(WiFi.macAddress().c_str()); std::string topic("flashboard/tag/"); return topic + mac;'
+          payload: !lambda 'std::string mac(WiFi.macAddress().c_str()); return "{ \"mac\": \"" + mac + "\", \"tag\": \"" + x + "\" }";'
